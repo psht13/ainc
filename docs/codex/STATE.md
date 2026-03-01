@@ -11,14 +11,20 @@ Master's coursework (course project):
 
 ## Current repository state
 
-- Repository is intentionally empty except for documentation.
-- No Next.js application has been created yet.
-- No product code has been added yet.
-- This step creates only architecture/spec/state markdown files.
+- A minimal Next.js App Router application now exists in the repository root.
+- Stack: Next.js 15, React 19, TypeScript.
+- The UI is a single-page split layout:
+  - left: local-state chat UI with mock messages
+  - right: `ExercisePanel` placeholder that becomes a mock task panel when the user asks for an exercise
+- No authentication, no database, no persistent storage.
+- No real LLM runtime integration yet; the repository runs in `mock` mode only.
+- A provider abstraction exists in `lib/llm/client.ts`, backed by a `mock` provider implementation.
+- A placeholder `/api/chat` route exists and returns deterministic mock responses.
+- A browser worker contract exists in `workers/test-runner.worker.ts`, but real test execution is not implemented yet.
 
 ## MVP scope
 
-The MVP is a JavaScript programming tutor with these learner-facing modes:
+The MVP remains a JavaScript programming tutor with these learner-facing modes:
 
 - `Explain`: explain concepts, syntax, errors, and code behavior in simple tutor language.
 - `Quiz`: generate short conceptual questions and validate answers.
@@ -28,7 +34,7 @@ The MVP is a JavaScript programming tutor with these learner-facing modes:
 
 ## Non-goals
 
-The MVP explicitly does not include:
+The MVP explicitly still does not include:
 
 - Multi-language tutoring beyond JavaScript.
 - Voice interface, speech-to-text, or text-to-speech.
@@ -38,163 +44,165 @@ The MVP explicitly does not include:
 - Advanced analytics, plagiarism detection, or grading dashboards.
 - Multi-user collaboration or teacher/admin panels.
 
-## Module list
+## Module status
 
-- `ChatOrchestrator`: routes each user turn into the correct tutoring mode and composes final responses.
-- `TutorPolicy`: enforces pedagogical rules (difficulty, tone, no direct answer leakage when a hint is requested).
-- `ExerciseGenerator`: creates coding exercises, acceptance criteria, and test cases.
-- `ClientTestRunner`: runs learner JavaScript only in a browser `Web Worker` with timeout and isolated messaging.
-- `FeedbackEvaluator`: compares learner output/test results with exercise expectations and produces review feedback.
+- `ChatOrchestrator`: planned, not implemented yet.
+- `TutorPolicy`: planned, not implemented yet.
+- `ExerciseGenerator`: planned, not implemented yet.
+- `ClientTestRunner`: contract stub created in `workers/test-runner.worker.ts`; execution logic still pending.
+- `FeedbackEvaluator`: planned, not implemented yet.
+- `LLM Client Abstraction`: implemented at the minimum level with `mock` provider only.
 
 ## LLM runtime choice
 
 ### Recommended runtime
 
-`Ollama` is the default target runtime for the real local LLM integration.
-
-### Why Ollama
-
-- It provides a stable local HTTP API, which matches the planned app architecture well.
-- It is simpler to install and operate for local thesis/demo environments than manually managing `llama.cpp` server binaries.
-- Model pull/run workflow is straightforward for local development and repeatable on macOS.
-- It is easier to swap models while keeping the same client abstraction.
+`Ollama` remains the default target runtime for real local LLM integration.
 
 ### Secondary option
 
-`llama.cpp` with local HTTP server (`llama-server`) remains a valid fallback provider if lower-level control or lighter runtime is needed later.
+`llama.cpp` with local HTTP server (`llama-server`) remains an acceptable fallback later.
 
 ### Environment check on 2026-03-01
 
-- `ollama`: not installed in the current environment (`command -v ollama` returned nothing).
-- `llama-server`: not installed in the current environment (`command -v llama-server` returned nothing).
-- `brew`: available.
-- `curl`: available.
-- `python3`: available.
-- `npx`: available.
+- `ollama`: not installed in the current environment.
+- `llama-server`: not installed in the current environment.
+- `pnpm`: not installed in the current environment.
+- `npm`: available.
+- `node`: available (`v24.10.0`).
 
-### Decision for this repository state
+### Decision for the current codebase
 
-- Canonical integration path: `Ollama`.
-- Immediate development mode: `mock` provider, because no local llama runtime is installed right now.
-- Future code must be written against an abstraction in `lib/llm/client.ts`, so switching from `mock` to `ollama` later is only a configuration change plus one adapter implementation.
-
-## LLM integration shape (planned, no code yet)
-
-Planned interface location:
-
-- `lib/llm/client.ts`
-
-Planned responsibilities:
-
-- Expose a provider-agnostic interface for chat/text generation.
-- Hide provider-specific HTTP details (`ollama`, later optionally `llama.cpp`).
-- Allow a `mock` implementation for UI and orchestration development when a real local LLM is unavailable.
-
-Planned provider set:
-
-- `mock`
-- `ollama`
-- optional later: `llama-cpp`
+- Canonical future integration path: `Ollama`.
+- Immediate development mode: `mock`.
+- All future LLM integration should continue using `lib/llm/client.ts` as the provider boundary.
 
 ## Env vars
 
-These values will be configured in `.env.local` once product code is created:
+The repository now includes `.env.local.example` with:
 
-- `LLM_PROVIDER`: `mock` for UI-only development now; `ollama` after local runtime is installed.
-- `LLM_BASE_URL`: default planned value for Ollama is `http://127.0.0.1:11434`.
-- `LLM_MODEL`: local model identifier, defined by the installed runtime.
-- `LLM_TEMPERATURE`: numeric generation temperature as a string, e.g. `0.2`.
+- `LLM_PROVIDER`
+- `LLM_BASE_URL`
+- `LLM_MODEL`
+- `LLM_TEMPERATURE`
+- `NEXT_PUBLIC_APP_NAME`
 
-Optional future app vars (not required yet, but likely useful):
-
-- `NEXT_PUBLIC_APP_NAME`: UI label for the tutor.
-- `NEXT_PUBLIC_DEFAULT_TIMEOUT_MS`: default client test runner timeout.
+Default development assumption remains `LLM_PROVIDER=mock`.
 
 ## File tree
 
-Planned repository structure after `PROMPT 1+`:
+Current source tree after `PROMPT 1`:
 
 ```text
 .
+├── .env.local.example
+├── .gitignore
+├── app/
+│   ├── api/
+│   │   └── chat/
+│   │       └── route.ts
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── chat/
+│   │   ├── ChatShell.tsx
+│   │   ├── Composer.tsx
+│   │   └── MessageList.tsx
+│   └── exercise/
+│       └── ExercisePanel.tsx
 ├── docs/
 │   └── codex/
 │       ├── ARCHITECTURE.md
 │       ├── SPEC.md
 │       └── STATE.md
-├── app/
-│   ├── api/
-│   │   └── chat/
-│   │       └── route.ts
-│   ├── layout.tsx
-│   ├── page.tsx
-│   └── globals.css
-├── components/
-│   ├── chat/
-│   ├── exercise/
-│   └── review/
 ├── lib/
 │   ├── llm/
 │   │   ├── client.ts
-│   │   ├── providers/
-│   │   │   ├── mock.ts
-│   │   │   └── ollama.ts
-│   ├── tutor/
-│   │   ├── chat-orchestrator.ts
-│   │   ├── tutor-policy.ts
-│   │   ├── exercise-generator.ts
-│   │   └── feedback-evaluator.ts
-│   └── utils/
+│   │   └── providers/
+│   │       └── mock.ts
+│   └── types.ts
 ├── workers/
 │   └── test-runner.worker.ts
-├── public/
-├── tests/
-│   ├── unit/
-│   └── integration/
-├── .env.local.example
+├── next-env.d.ts
+├── package-lock.json
 ├── package.json
 └── tsconfig.json
 ```
 
+Local generated artifacts also exist during development and are ignored by git:
+
+- `node_modules/`
+- `.next/`
+- `.npm-cache/`
+- `tsconfig.tsbuildinfo`
+
+## Installed dependency versions
+
+Installed and verified on 2026-03-01:
+
+- `next@15.5.12`
+- `react@19.2.4`
+- `react-dom@19.2.4`
+- `typescript@5.9.3`
+- `@types/node@24.11.0`
+- `@types/react@19.2.14`
+- `@types/react-dom@19.2.3`
+
 ## Commands
 
-Planned commands for the next implementation step (not executed in this prompt):
+Standard local commands:
 
-- Safe scaffold command if the repo must stay non-empty:
-  `npx create-next-app@latest temp-app --ts --app --src-dir --eslint --tailwind --use-npm --import-alias "@/*"`
-- After scaffold, move the generated app shell into the repository root while keeping `docs/`.
-- Start local dev server:
-  `npm run dev`
+- Install dependencies: `npm install`
+- Start dev server: `npm run dev`
+- Type-check: `npm run typecheck`
+- Production build: `npm run build`
+- Start production server after build: `npm run start`
 
-Planned local llama setup commands (not executed in this prompt):
+Environment-specific fallback if the user-level npm cache throws a permission error:
 
-- Install Ollama on this machine:
-  `brew install ollama`
-- Start the local runtime:
-  `ollama serve`
-- Pull a local llama model:
-  `ollama pull llama3.2:3b`
+- `npm install --cache .npm-cache`
 
-If Ollama is not installed by `PROMPT 1`, continue with:
+## Verification status
 
-- `.env.local` configured to `LLM_PROVIDER=mock`
-- UI/orchestration development against the mock adapter
+Verified on 2026-03-01:
 
-## TODO next steps
+- `npm run typecheck`: passed
+- `npm run build`: passed
+- `npm run dev`: started successfully
 
-- Scaffold the Next.js app shell without deleting `docs/`.
-- Add `.env.local.example` with `LLM_*` variables.
-- Create the provider abstraction in `lib/llm/client.ts` plus a `mock` adapter first.
-- Build the initial tutor chat UI and wire it to a placeholder chat route.
-- Implement browser-only `Web Worker` execution with a hard timeout.
-- Add the first exercise/test contract for JavaScript tasks.
+During verification, port `3000` was already occupied in this environment, so Next.js automatically bound to `http://localhost:3001`.
 
-## PROMPT 1 checklist
+## What is ready
 
-For `PROMPT 1`, the next chat should perform these steps:
+- Minimal runnable Next.js shell with App Router and TypeScript.
+- Split demo layout with chat on the left and exercise panel on the right.
+- Local React state for `messages` and current `exercise`.
+- Shared domain types in `lib/types.ts`.
+- Minimal mock LLM client and placeholder chat API route.
+- Initial worker message contract for future client-side test execution.
 
-1. Create the Next.js app shell and keep `docs/codex/*` intact.
-2. Add `.env.local.example` with `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_TEMPERATURE`.
-3. Create `lib/llm/client.ts` interface plus `mock` provider implementation only.
-4. Add the first minimal chat page and a placeholder API route that uses the mock provider.
-5. Add the initial `Web Worker` skeleton for client-side code execution with timeout contract only.
-6. Update this file (`docs/codex/STATE.md`) with the exact created files and current runnable commands.
+## Next steps
+
+- Wire the chat UI to call `/api/chat` instead of generating replies entirely on the client.
+- Add the first explicit mode selector or intent routing (`Explain`, `Quiz`, `Exercise`, `Hint`, `Review`).
+- Add a real exercise state model with editable learner code and visible test results.
+- Implement actual browser-only execution in `workers/test-runner.worker.ts` with timeout handling.
+- Add `ollama` provider implementation behind the existing LLM abstraction when the local runtime is installed.
+
+## PROMPT 1 status
+
+Completed:
+
+1. Created the Next.js app shell and kept `docs/codex/*` intact.
+2. Added `.env.local.example`.
+3. Added `lib/llm/client.ts` and `lib/llm/providers/mock.ts`.
+4. Added the first minimal chat page and placeholder `/api/chat` route.
+5. Added the initial `Web Worker` skeleton.
+6. Updated this file with the exact created files and runnable commands.
+
+Still intentionally deferred:
+
+- Real tutoring orchestration modules.
+- Real browser test execution.
+- Real local `Ollama` integration.
